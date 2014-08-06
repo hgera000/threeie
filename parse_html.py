@@ -17,12 +17,21 @@ for fname in sorted(os.listdir(source_folder),key=lambda x: int(x.split(".")[0])
     print ('Parsing file named %s' % fname)
     with open("%s%s" % (source_folder,fname),'r') as f:
         soup = BeautifulSoup(f.read())
+        if not soup.article.h1:
+            continue
         d['title'] = [soup.article.h1.text.strip(),]
-        pdb.set_trace()
-        d['year'] = re.sub(re.compile('[^0-9]'),'',soup.time.text)
-        d['source'] = re.sub(re.compile('Available From:$',re.IGNORECASE),'',soup.find('h2',text=re.compile('Publication Source')).findNext('p',text=re.compile('Available', re.IGNORECASE)).strip())
+        #pdb.set_trace()
+        if soup.time:
+            d['year'] = re.sub(re.compile('[^0-9]'),'',soup.time.text)
+        else:
+            d['year']="NULL"
+        d['source'] = re.sub(re.compile('Ava[il][li]able From:$',re.IGNORECASE),'',soup.find('h2',text=re.compile('Publication Source')).findNext('p',text=re.compile('Ava[il][li]able', re.IGNORECASE)).strip())
         
-        d['link'] = [soup.find('a',{'class':"button evidence_link"})['href'].strip(),]
+        if soup.find('a',{'class':"button evidence_link"}):
+            d['link'] = [soup.find('a',{'class':"button evidence_link"})['href'].strip(),]
+        else:
+            d['link'] = "NULL"
+    
         meta = soup.find('section', {'class': 'evidence_meta'})
 
         dt = meta.findAll('dt')
