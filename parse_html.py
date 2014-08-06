@@ -18,14 +18,17 @@ for fname in sorted(os.listdir(source_folder),key=lambda x: int(x.split(".")[0])
     with open("%s%s" % (source_folder,fname),'r') as f:
         soup = BeautifulSoup(f.read())
         if not soup.article.h1:
+            print ('File named %s was skipped' % fname)
             continue
         d['title'] = [soup.article.h1.text.strip(),]
-        #pdb.set_trace()
+
         if soup.time:
             d['year'] = re.sub(re.compile('[^0-9]'),'',soup.time.text)
         else:
             d['year']="NULL"
-        d['source'] = re.sub(re.compile('Ava[il][li]able From:$',re.IGNORECASE),'',soup.find('h2',text=re.compile('Publication Source')).findNext('p',text=re.compile('Ava[il][li]able', re.IGNORECASE)).strip())
+
+        d['source'] = re.sub(re.compile('Ava[il][li]able From:$',re.IGNORECASE),'',soup.find('h2',text=re.compile('Publication Source')).findNext('p',text=re.compile('[0-9]')).strip())
+
         
         if soup.find('a',{'class':"button evidence_link"}):
             d['link'] = [soup.find('a',{'class':"button evidence_link"})['href'].strip(),]
@@ -38,11 +41,12 @@ for fname in sorted(os.listdir(source_folder),key=lambda x: int(x.split(".")[0])
         dd = meta.findAll('dd')
         for i in range(0,len(dt)):
             if dt[i].text == 'Authors':
-                d[dt[i].text.lower().strip()] = re.split(',| and ', dd[i].text.strip())
+                d[dt[i].text.lower().strip()] = re.split(', | and ', dd[i].text.strip())
             else:
                 d[dt[i].text.lower().strip()] = dd[i].text.strip().replace('&amp;', '&').split(', ')
 
         details = soup.findAll('section',{'class': 'summary_item'})
+
         for det in details:
             d[det.h2.text.lower()] = det.nextSibling.text.strip()
 
@@ -53,6 +57,7 @@ for fname in sorted(os.listdir(source_folder),key=lambda x: int(x.split(".")[0])
         if 'about this impact evaluation' not in d:
             d['about this impact evaluation'] = "NULL"
 
+        
         stdout1 = "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s";
 
         print(stdout1 % (fname.rstrip('.html'),d['title'][0],d['status'][0],d['year'],d['country'][0],d['region'][0],d['source'],d['link'][0],d['gender focus'][0], d['methodology'], d['main findings'], d['about this impact evaluation']),file=studies)
